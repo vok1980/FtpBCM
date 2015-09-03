@@ -11,18 +11,18 @@ class FtpBCM:
 
 
 def main():
-	parser = argparse.ArgumentParser(description='Push binaries to ftp server with respect to version and target platform.')
+	parser = argparse.ArgumentParser(description='Push binaries to ftp server with respect to version and target platform')
 	parser.add_argument('command', help='Command can be push or pull')
-	parser.add_argument('server', help='Destination server name.')
-	parser.add_argument('path', help='Path to be stored on server.')
-	parser.add_argument('version', help='Version of binaries.')
+	parser.add_argument('server', help='Destination server name')
+	parser.add_argument('path', help='Path to be stored on server')
+	parser.add_argument('version', help='Version of binaries')
 	parser.add_argument('platform', help='Target platform name')
 
 	args = parser.parse_args()
 
 	if ((args.command != 'push')  and (args.command != 'pull')):
-		raise Exception('Unexpected command \'', parser.command, '\'')
-
+		print 'Unexpected command: ',  args.command
+		raise Exception('Unexpected command')
 
 	bcm = FtpBCM(args.command, args.server, args.path, args.version, args.platform);
 
