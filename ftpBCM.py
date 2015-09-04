@@ -91,13 +91,26 @@ class FtpBCM:
 	def __pull(self, path):
 		print 'ready to pull', path
 		
-		if self.__file_exists('.guard_ready'):
-			print 'data already exists'
-			return
-		else:
-			print 'data does not exists'
-			self.__mkd_cd('data')
+		if self.__file_exists('guard_ready'):
+			print 'Data exists on the server'
 
+			arch_name = 'bcm_data'
+			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
+			
+			print 'downloading...'
+			fh = open(arch_path + '.tar', 'wb')
+			self.ftp.retrbinary('RETR %s' % arch_name + '.tar', fh.write)
+			fh.close();
+
+			print 'extracting...'
+			tar = tarfile.open(arch_path + '.tar')
+			tar.extractall(path)
+			tar.close();
+
+			print 'done!'
+			
+		else:
+			print 'Data does not exists'
 
 	
 
