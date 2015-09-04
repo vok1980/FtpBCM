@@ -19,8 +19,6 @@ class FtpBCM:
 		self.__mkd_cd(version)
 		self.__mkd_cd(platform)
 
-		self.ftp.retrlines('LIST')
-
 		if command == 'push':
 			self.__push(path)
 
@@ -31,8 +29,6 @@ class FtpBCM:
 
 
 	def __mkd_cd(self, dirname):
-		
-		print 'mk_cd', dirname
 
 		try:
 			self.ftp.mkd(dirname)
@@ -45,15 +41,12 @@ class FtpBCM:
 
 	def uploadThis(self, path):
 
-		print 'uploadThis', path
-
 		if os.path.isfile(path):
 			fh = open(path, 'rb')
 			self.ftp.storbinary('STOR %s' % os.path.basename(path), fh)
 			fh.close()
 
-		elif os.path.isdir(path):
-			
+		elif os.path.isdir(path):			
 			self.__mkd_cd(os.path.basename(os.path.normpath(path)))
 			g = glob.glob(os.path.join(path, '*'))
 			print 'glob result:', g
@@ -65,7 +58,6 @@ class FtpBCM:
 
 
 
-
 	def __push(self, path):
 		print 'ready to push ', path
 
@@ -74,7 +66,7 @@ class FtpBCM:
 			return
 
 		else:
-			print 'data does not exists'
+			print 'Data does not presists on server yet'
 
 			bio = io.BytesIO(' ')
 			self.ftp.storbinary('STOR guard_push', bio)
