@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
 from ftplib import FTP
 import ftplib
 import io
@@ -14,10 +13,9 @@ import tempfile
 
 class FtpBCM:
 	def __init__(self, command, server, user, passwd, path, version, platform):
-		print command, server, user, passwd, path, version, platform	
 		self.ftp = FTP(server)
 		self.ftp.login(user, passwd)
-		
+
 		self.__mkd_cd('bcm')
 		self.__mkd_cd(version)
 		self.__mkd_cd(platform)
@@ -32,7 +30,6 @@ class FtpBCM:
 
 
 	def __mkd_cd(self, dirname):
-
 		try:
 			self.ftp.mkd(dirname)
 		except ftplib.error_perm as e:
@@ -43,18 +40,14 @@ class FtpBCM:
 
 
 	def uploadThis(self, path):
-
 		if os.path.isfile(path):
-			fh = open(path, 'rb')
-			self.ftp.storbinary('STOR %s' % os.path.basename(path), fh)
-			fh.close()
+			with open(path, 'rb') as fh:
+				self.ftp.storbinary('STOR %s' % os.path.basename(path), fh)
 
-		elif os.path.isdir(path):			
+		elif os.path.isdir(path):
 			self.__mkd_cd(os.path.basename(os.path.normpath(path)))
-			g = glob.glob(os.path.join(path, '*'))
-			print 'glob result:', g
 
-			for f in g:
+			for f in glob.glob(os.path.join(path, '*')):
 				self.uploadThis(f)
 
 			self.ftp.cwd('..')
@@ -98,9 +91,8 @@ class FtpBCM:
 			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
 			
 			print 'downloading...'
-			fh = open(arch_path + '.tar', 'wb')
-			self.ftp.retrbinary('RETR %s' % arch_name + '.tar', fh.write)
-			fh.close();
+			with open(arch_path + '.tar', 'wb') as fh:
+				self.ftp.retrbinary('RETR %s' % arch_name + '.tar', fh.write)
 
 			print 'extracting...'
 			tar = tarfile.open(arch_path + '.tar')
@@ -112,7 +104,6 @@ class FtpBCM:
 		else:
 			print 'Data does not exists'
 
-	
 
 
 	def __file_exists(self, filename):
@@ -122,12 +113,13 @@ class FtpBCM:
 		for f in filelist:
 			if f.split()[-1] == filename:
 				return True
-		
+
 		return False
-		
 
 
 def main():
+	import argparse
+
 	parser = argparse.ArgumentParser(description='Push binaries to ftp server with respect to version and target platform')
 	parser.add_argument('command', help='Command can be push or pull')
 	parser.add_argument('server', help='Destination server name')
