@@ -4,19 +4,22 @@
 import argparse
 from ftplib import FTP
 import ftplib
+import io
+import os
+import glob
 
 
 class FtpBCM:
 	def __init__(self, command, server, user, passwd, path, version, platform):
 		print command, server, user, passwd, path, version, platform	
-		ftp = FTP(server)
-		ftp.login(user, passwd)
+		self.ftp = FTP(server)
+		self.ftp.login(user, passwd)
 		
-		self.__mkd_cd(ftp, 'bcm')
-		self.__mkd_cd(ftp, version)
-		self.__mkd_cd(ftp, platform)
+		self.__mkd_cd('bcm')
+		self.__mkd_cd(version)
+		self.__mkd_cd(platform)
 
-		ftp.retrlines('LIST')
+		self.ftp.retrlines('LIST')
 
 		if command == 'push':
 			self.__push(path)
@@ -24,25 +27,90 @@ class FtpBCM:
 		if command == 'pull':
 			self.__pull(path)
 		
-		ftp.quit()
+		self.ftp.quit()
 
 
-	def __mkd_cd(self, ftp, dirname):
+	def __mkd_cd(self, dirname):
+		
+		print 'mk_cd', dirname
+
 		try:
-                        ftp.mkd(dirname)
-                except ftplib.error_perm as e:
-                        print(e)
+			self.ftp.mkd(dirname)
+		except ftplib.error_perm as e:
+			print(e)
 
-                ftp.cwd(dirname)
+		self.ftp.cwd(dirname)
+
+
+
+	def uploadThis(self, path):
+
+		print 'uploadThis', path
+
+		if os.path.isfile(path):
+			fh = open(path, 'rb')
+			self.ftp.storbinary('STOR %s' % os.path.basename(path), fh)
+			fh.close()
+
+		elif os.path.isdir(path):
+			
+			self.__mkd_cd(os.path.basename(os.path.normpath(path)))
+			g = glob.glob(os.path.join(path, '*'))
+			print 'glob result:', g
+
+			for f in g:
+				self.uploadThis(f)
+
+			self.ftp.cwd('..')
+
+
 
 
 	def __push(self, path):
 		print 'ready to push ', path
 
+		if self.__file_exists('guard_ready') or self.__file_exists('guard_push'):
+			print 'data already exists or in progress'
+			return
+
+		else:
+			print 'data does not exists'
+
+			bio = io.BytesIO(' ')
+			self.ftp.storbinary('STOR guard_push', bio)
+
+			self.__mkd_cd('data')
+			self.uploadThis(path)
+
+			self.ftp.delete(os.path.join('..', 'guard_push'))
+
+
+
+
 
 	def __pull(self, path):
 		print 'ready to pull', path
+		
+		if self.__file_exists('.guard_ready'):
+			print 'data already exists'
+			return
+		else:
+			print 'data does not exists'
+			self.__mkd_cd('data')
 
+
+	
+
+
+	def __file_exists(self, filename):
+		filelist = [] #to store all files
+		self.ftp.retrlines('LIST',filelist.append)    # append to list  
+
+		for f in filelist:
+			if f.split()[-1] == filename:
+				return True
+		
+		return False
 		
 
 
