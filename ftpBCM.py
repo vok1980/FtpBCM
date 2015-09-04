@@ -7,6 +7,9 @@ import ftplib
 import io
 import os
 import glob
+import shutil
+import tarfile
+import tempfile
 
 
 class FtpBCM:
@@ -71,12 +74,17 @@ class FtpBCM:
 			bio = io.BytesIO(' ')
 			self.ftp.storbinary('STOR guard_push', bio)
 
-			self.__mkd_cd('data')
-			self.uploadThis(path)
+			arch_name = 'bcm_data'
+			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
+			
+			print 'archiving...'
+			shutil.make_archive(arch_path, 'tar', path)
+			print 'uploading...'
+			self.uploadThis(arch_path + '.tar')
 
-			self.ftp.delete(os.path.join('..', 'guard_push'))
-
-
+			self.ftp.storbinary('STOR guard_ready', bio)
+			self.ftp.delete(os.path.join('guard_push'))
+			print 'done!'
 
 
 
