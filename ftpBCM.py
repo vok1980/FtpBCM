@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ftplib import FTP
 import ftplib
 import io
 import os
@@ -12,21 +11,17 @@ import tempfile
 
 
 class FtpBCM:
-	def __init__(self, command, server, user, passwd, path, version, platform):
-		self.ftp = FTP(server)
-		self.ftp.login(user, passwd)
+	def __init__(self, server, user, passwd):
+		self.ftp = ftplib.FTP(server)
+		self.user = user
+		self.passwd = passwd
 
+
+	def __login(self, version, platform):
+		self.ftp.login(self.user, self.passwd)
 		self.__mkd_cd('bcm')
 		self.__mkd_cd(version)
 		self.__mkd_cd(platform)
-
-		if command == 'push':
-			self.__push(path)
-
-		if command == 'pull':
-			self.__pull(path)
-		
-		self.ftp.quit()
 
 
 	def __mkd_cd(self, dirname):
@@ -36,7 +31,6 @@ class FtpBCM:
 			print(e)
 
 		self.ftp.cwd(dirname)
-
 
 
 	def uploadThis(self, path):
@@ -53,67 +47,76 @@ class FtpBCM:
 			self.ftp.cwd('..')
 
 
-	def __push(self, path):
+	def push(self, path, version, platform):
+		self.__login(version, platform)
 		print 'ready to push ', path
 
-		if self.__file_exists('guard_ready') or self.__file_exists('guard_push'):
-			print 'data already exists or in progress'
-			return
+		try:
+			if self.__file_exists('guard_ready') or self.__file_exists('guard_push'):
+				print 'data already exists or in progress'
+				return
 
-		else:
-			print 'Data does not presists on server yet'
+			else:
+				print 'Data does not presists on server yet'
+				
+				arch_name = 'bcm_data'
+				arch_path = os.path.join(tempfile.gettempdir(), arch_name)
+
+				print 'archiving...'
+				shutil.make_archive(arch_path, 'tar', path)
 			
-			arch_name = 'bcm_data'
-			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
+				try:	
+					bio = io.BytesIO(' ')
+					self.ftp.storbinary('STOR guard_push', bio)
 
-			print 'archiving...'
-			shutil.make_archive(arch_path, 'tar', path)
-		
-			try:	
-				bio = io.BytesIO(' ')
-				self.ftp.storbinary('STOR guard_push', bio)
+					print 'uploading...'
+					self.uploadThis(arch_path + '.tar')
 
-				print 'uploading...'
-				self.uploadThis(arch_path + '.tar')
-
-				self.ftp.storbinary('STOR guard_ready', bio)
-				self.ftp.delete(os.path.join('guard_push'))
-				print 'done!'
-			
-			except:
-				print 'Somthing went wrong'
-
-				try:
+					self.ftp.storbinary('STOR guard_ready', bio)
 					self.ftp.delete(os.path.join('guard_push'))
+					print 'done!'
+				
 				except:
-					print 'Failed to remove push guard'
+					print 'Somthing went wrong'
 
-				raise Exception('Failed to push data')
+					try:
+						self.ftp.delete(os.path.join('guard_push'))
+					except:
+						print 'Failed to remove push guard'
+
+					raise Exception('Failed to push data')
+
+		finally:
+			self.ftp.quit()
 
 
-	def __pull(self, path):
+	def pull(self, path, version, platform):
+		self.__login(version, platform)
 		print 'ready to pull', path
 		
-		if self.__file_exists('guard_ready'):
-			print 'Data exists on the server'
+		try:
+			if self.__file_exists('guard_ready'):
+				print 'Data exists on the server'
 
-			arch_name = 'bcm_data'
-			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
-			
-			print 'downloading...'
-			with open(arch_path + '.tar', 'wb') as fh:
-				self.ftp.retrbinary('RETR %s' % arch_name + '.tar', fh.write)
+				arch_name = 'bcm_data'
+				arch_path = os.path.join(tempfile.gettempdir(), arch_name)
+				
+				print 'downloading...'
+				with open(arch_path + '.tar', 'wb') as fh:
+					self.ftp.retrbinary('RETR %s' % arch_name + '.tar', fh.write)
 
-			print 'extracting...'
-			tar = tarfile.open(arch_path + '.tar')
-			tar.extractall(path)
-			tar.close();
+				print 'extracting...'
+				tar = tarfile.open(arch_path + '.tar')
+				tar.extractall(path)
+				tar.close();
 
-			print 'done!'
-			
-		else:
-			print 'Data does not exists'
-
+				print 'done!'
+				
+			else:
+				print 'Data does not exists'
+		
+		finally:
+			self.ftp.quit()
 
 
 	def __file_exists(self, filename):
@@ -140,12 +143,15 @@ def main():
 	parser.add_argument('--passwd', default='123', help='ftp userpass')
 
 	args = parser.parse_args()
+	bcm = FtpBCM(args.server, args.user, args.passwd)
 
-	if ((args.command != 'push') and (args.command != 'pull')):
+	if args.command == 'push':
+		bcm.push(args.path, args.version, args.platform)
+	elif args.command == 'pull':
+		bcm.pull(args.path, args.version, args.platform)
+	else:
 		print 'Unexpected command: ',  args.command
 		raise Exception('Unexpected command')
-
-	bcm = FtpBCM(args.command, args.server, args.user, args.passwd, args.path, args.version, args.platform);
 
 
 if __name__ == "__main__":
