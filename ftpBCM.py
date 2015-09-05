@@ -53,7 +53,6 @@ class FtpBCM:
 			self.ftp.cwd('..')
 
 
-
 	def __push(self, path):
 		print 'ready to push ', path
 
@@ -63,22 +62,33 @@ class FtpBCM:
 
 		else:
 			print 'Data does not presists on server yet'
-
-			bio = io.BytesIO(' ')
-			self.ftp.storbinary('STOR guard_push', bio)
-
+			
 			arch_name = 'bcm_data'
 			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
-			
+
 			print 'archiving...'
 			shutil.make_archive(arch_path, 'tar', path)
-			print 'uploading...'
-			self.uploadThis(arch_path + '.tar')
+		
+			try:	
+				bio = io.BytesIO(' ')
+				self.ftp.storbinary('STOR guard_push', bio)
 
-			self.ftp.storbinary('STOR guard_ready', bio)
-			self.ftp.delete(os.path.join('guard_push'))
-			print 'done!'
+				print 'uploading...'
+				self.uploadThis(arch_path + '.tar')
 
+				self.ftp.storbinary('STOR guard_ready', bio)
+				self.ftp.delete(os.path.join('guard_push'))
+				print 'done!'
+			
+			except:
+				print 'Somthing went wrong'
+
+				try:
+					self.ftp.delete(os.path.join('guard_push'))
+				except:
+					print 'Failed to remove push guard'
+
+				raise Exception('Failed to push data')
 
 
 	def __pull(self, path):
