@@ -12,12 +12,13 @@ import tempfile
 
 class FtpBCM:
 	def __init__(self, server, user, passwd):
-		self.ftp = ftplib.FTP(server)
+		self.server = server
 		self.user = user
 		self.passwd = passwd
 
 
 	def __login(self, version, platform):
+		self.ftp = ftplib.FTP(self.server)
 		self.ftp.login(self.user, self.passwd)
 		self.__mkd_cd('bcm')
 		self.__mkd_cd(version)
