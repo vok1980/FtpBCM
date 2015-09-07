@@ -36,7 +36,7 @@ class FtpBCM:
 		self.ftp.cwd(dirname)
 
 
-	def uploadThis(self, path):
+	def __uploadThis(self, path):
 		if os.path.isfile(path):
 			with open(path, 'rb') as fh:
 				self.ftp.storbinary('STOR %s' % os.path.basename(path), fh)
@@ -45,7 +45,7 @@ class FtpBCM:
 			self.__mkd_cd(os.path.basename(os.path.normpath(path)))
 
 			for f in glob.glob(os.path.join(path, '*')):
-				self.uploadThis(f)
+				self.__uploadThis(f)
 
 			self.ftp.cwd('..')
 
@@ -76,7 +76,7 @@ class FtpBCM:
 				self.ftp.storbinary('STOR guard_push', bio)
 
 				print 'uploading...'
-				self.uploadThis(arch_path + '.tar')
+				self.__uploadThis(arch_path + '.tar')
 
 				print 'setting guard...'
 				self.ftp.storbinary('STOR guard_ready', bio)
