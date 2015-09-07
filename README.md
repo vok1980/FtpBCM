@@ -4,7 +4,7 @@ Tool for binary control management over ftp
 When you have a large project in dependencies, and you dont need to modify it constantly, then its march faster to build it just once on every revision, put the binaries on ftp server and then get in from ftp when you need it on other host.
 
 ```python 
-# Somwhere in build script
+# Somewhere in the build script...
 from ftpBCM import ftpBCM
 
 # init BCM
@@ -19,5 +19,10 @@ bcm.pull(path_to_project_binaries_for_platform_desktop_x86, project_source_revis
 bcm.push(path_to_project_binaries_for_platform_desktop_x86, project_source_revision, 'desktop_debug_x86')
 
 # Now we have project's binaries on ftp, so next time we will not build it.
+
+```
+Or the same from commandline:
+``` 
+python ftpBCM.py push server path project_source_revision 'desktop_debug_x86' --user user --passwd password --project project_name
 
 ```
