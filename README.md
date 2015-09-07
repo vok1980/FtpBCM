@@ -1,7 +1,7 @@
 # FtpBCM
 Tool for binary control management over ftp
 
-When you have a large project in dependencies, and you dont need to modify it constantly, then its march faster to build it just once on every revision, put the binaries on ftp server and then get in from ftp when you need it on other host.
+When you have a large project in dependencies, and you dont need to modify it constantly, then its much faster to build it just once on every revision, put the binaries on ftp server and then get in from ftp when you need it on other host.
 
 ```python 
 # Somewhere in the build script...
