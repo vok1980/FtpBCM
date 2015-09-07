@@ -11,16 +11,18 @@ import tempfile
 
 
 class FtpBCM:
-	def __init__(self, server, user, passwd):
+	def __init__(self, server, user, passwd, project):
 		self.server = server
 		self.user = user
 		self.passwd = passwd
+		self.project = project
 
 
 	def __login(self, version, platform):
 		self.ftp = ftplib.FTP(self.server)
 		self.ftp.login(self.user, self.passwd)
 		self.__mkd_cd('bcm')
+		self.__mkd_cd(project)
 		self.__mkd_cd(version)
 		self.__mkd_cd(platform)
 
@@ -156,9 +158,10 @@ def main():
 	parser.add_argument('platform', help='Target platform name')
 	parser.add_argument('--user', default='bcm', help='ftp username')
 	parser.add_argument('--passwd', default='123', help='ftp userpass')
+	parser.add_argument('--project', default='default', help='project name')
 
 	args = parser.parse_args()
-	bcm = FtpBCM(args.server, args.user, args.passwd)
+	bcm = FtpBCM(args.server, args.user, args.passwd, args.project)
 	ret = False;
 
 	if args.command == 'push':
