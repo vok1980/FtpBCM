@@ -82,9 +82,12 @@ class FtpBCM:
 				self.ftp.storbinary('STOR guard_ready', bio)
 				print 'done!'
 				res = True
-					
+		
+		except Exception as e:
+			print 'Error happend:', e
+
 		except:
-			print 'Somthing went wrong'
+			print 'Something went wrong'
 
 		finally:
 			try:
