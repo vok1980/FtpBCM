@@ -19,10 +19,8 @@ bcm.pull(path_to_project_binaries_for_platform_desktop_x86, project_source_revis
 bcm.push(path_to_project_binaries_for_platform_desktop_x86, project_source_revision, 'desktop_debug_x86')
 
 # Now we have project's binaries on ftp, so next time we will not build it.
-
 ```
 Or the same from commandline:
-``` 
+``` Shell
 python ftpBCM.py push server path project_source_revision 'desktop_debug_x86' --user user --passwd password --project project_name
-
 ```
