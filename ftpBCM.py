@@ -159,8 +159,8 @@ def main():
 	parser.add_argument('path', help='Path to be stored on server')
 	parser.add_argument('version', help='Version of binaries')
 	parser.add_argument('platform', help='Target platform name')
-	parser.add_argument('--user', default='bcm', help='ftp username')
-	parser.add_argument('--passwd', default='123', help='ftp userpass')
+	parser.add_argument('--user', default='anonymous', help='ftp username')
+	parser.add_argument('--passwd', default='anonymous@', help='ftp userpass')
 	parser.add_argument('--project', default='default', help='project name')
 
 	args = parser.parse_args()
