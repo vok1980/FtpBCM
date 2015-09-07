@@ -11,16 +11,18 @@ import tempfile
 
 
 class FtpBCM:
-	def __init__(self, server, user, passwd):
+	def __init__(self, server, user, passwd, project):
 		self.server = server
 		self.user = user
 		self.passwd = passwd
+		self.project = project
 
 
 	def __login(self, version, platform):
 		self.ftp = ftplib.FTP(self.server)
 		self.ftp.login(self.user, self.passwd)
 		self.__mkd_cd('bcm')
+		self.__mkd_cd(self.project)
 		self.__mkd_cd(version)
 		self.__mkd_cd(platform)
 
@@ -34,7 +36,7 @@ class FtpBCM:
 		self.ftp.cwd(dirname)
 
 
-	def uploadThis(self, path):
+	def __uploadThis(self, path):
 		if os.path.isfile(path):
 			with open(path, 'rb') as fh:
 				self.ftp.storbinary('STOR %s' % os.path.basename(path), fh)
@@ -43,7 +45,7 @@ class FtpBCM:
 			self.__mkd_cd(os.path.basename(os.path.normpath(path)))
 
 			for f in glob.glob(os.path.join(path, '*')):
-				self.uploadThis(f)
+				self.__uploadThis(f)
 
 			self.ftp.cwd('..')
 
@@ -74,15 +76,18 @@ class FtpBCM:
 				self.ftp.storbinary('STOR guard_push', bio)
 
 				print 'uploading...'
-				self.uploadThis(arch_path + '.tar')
+				self.__uploadThis(arch_path + '.tar')
 
 				print 'setting guard...'
 				self.ftp.storbinary('STOR guard_ready', bio)
 				print 'done!'
 				res = True
-					
+		
+		except Exception as e:
+			print 'Error happend:', e
+
 		except:
-			print 'Somthing went wrong'
+			print 'Something went wrong'
 
 		finally:
 			try:
@@ -154,11 +159,12 @@ def main():
 	parser.add_argument('path', help='Path to be stored on server')
 	parser.add_argument('version', help='Version of binaries')
 	parser.add_argument('platform', help='Target platform name')
-	parser.add_argument('--user', default='bcm', help='ftp username')
-	parser.add_argument('--passwd', default='123', help='ftp userpass')
+	parser.add_argument('--user', default='anonymous', help='ftp username')
+	parser.add_argument('--passwd', default='anonymous@', help='ftp userpass')
+	parser.add_argument('--project', default='default', help='project name')
 
 	args = parser.parse_args()
-	bcm = FtpBCM(args.server, args.user, args.passwd)
+	bcm = FtpBCM(args.server, args.user, args.passwd, args.project)
 	ret = False;
 
 	if args.command == 'push':
