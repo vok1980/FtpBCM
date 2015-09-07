@@ -22,7 +22,7 @@ class FtpBCM:
 		self.ftp = ftplib.FTP(self.server)
 		self.ftp.login(self.user, self.passwd)
 		self.__mkd_cd('bcm')
-		self.__mkd_cd(project)
+		self.__mkd_cd(self.project)
 		self.__mkd_cd(version)
 		self.__mkd_cd(platform)
 
