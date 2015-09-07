@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ftplib import FTP
 import ftplib
 import io
 import os
@@ -12,21 +11,20 @@ import tempfile
 
 
 class FtpBCM:
-	def __init__(self, command, server, user, passwd, path, version, platform):
-		self.ftp = FTP(server)
-		self.ftp.login(user, passwd)
+	def __init__(self, server, user, passwd, project):
+		self.server = server
+		self.user = user
+		self.passwd = passwd
+		self.project = project
 
+
+	def __login(self, version, platform):
+		self.ftp = ftplib.FTP(self.server)
+		self.ftp.login(self.user, self.passwd)
 		self.__mkd_cd('bcm')
+		self.__mkd_cd(self.project)
 		self.__mkd_cd(version)
 		self.__mkd_cd(platform)
-
-		if command == 'push':
-			self.__push(path)
-
-		if command == 'pull':
-			self.__pull(path)
-		
-		self.ftp.quit()
 
 
 	def __mkd_cd(self, dirname):
@@ -38,8 +36,7 @@ class FtpBCM:
 		self.ftp.cwd(dirname)
 
 
-
-	def uploadThis(self, path):
+	def __uploadThis(self, path):
 		if os.path.isfile(path):
 			with open(path, 'rb') as fh:
 				self.ftp.storbinary('STOR %s' % os.path.basename(path), fh)
@@ -48,62 +45,98 @@ class FtpBCM:
 			self.__mkd_cd(os.path.basename(os.path.normpath(path)))
 
 			for f in glob.glob(os.path.join(path, '*')):
-				self.uploadThis(f)
+				self.__uploadThis(f)
 
 			self.ftp.cwd('..')
 
 
+	def push(self, path, version, platform):
+		print 'Trying to push ', path, 'on ', self.server, '...' 
+		res = False
 
-	def __push(self, path):
-		print 'ready to push ', path
+		try:
+			self.__login(version, platform)
 
-		if self.__file_exists('guard_ready') or self.__file_exists('guard_push'):
-			print 'data already exists or in progress'
-			return
+			if self.__file_exists('guard_ready'):
+				print 'Data already exists, no need to push'
 
-		else:
-			print 'Data does not presists on server yet'
+			elif self.__file_exists('guard_push'):
+				print 'Data already in progress'
 
-			bio = io.BytesIO(' ')
-			self.ftp.storbinary('STOR guard_push', bio)
+			else:
+				print 'Data does not presists on server yet'
+				
+				arch_name = 'bcm_data'
+				arch_path = os.path.join(tempfile.gettempdir(), arch_name)
 
-			arch_name = 'bcm_data'
-			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
+				print 'archiving...'
+				shutil.make_archive(arch_path, 'tar', path)
 			
-			print 'archiving...'
-			shutil.make_archive(arch_path, 'tar', path)
-			print 'uploading...'
-			self.uploadThis(arch_path + '.tar')
+				bio = io.BytesIO(' ')
+				self.ftp.storbinary('STOR guard_push', bio)
 
-			self.ftp.storbinary('STOR guard_ready', bio)
-			self.ftp.delete(os.path.join('guard_push'))
-			print 'done!'
+				print 'uploading...'
+				self.__uploadThis(arch_path + '.tar')
 
-
-
-	def __pull(self, path):
-		print 'ready to pull', path
+				print 'setting guard...'
+				self.ftp.storbinary('STOR guard_ready', bio)
+				print 'done!'
+				res = True
 		
-		if self.__file_exists('guard_ready'):
-			print 'Data exists on the server'
+		except Exception as e:
+			print 'Error happend:', e
 
-			arch_name = 'bcm_data'
-			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
-			
-			print 'downloading...'
-			with open(arch_path + '.tar', 'wb') as fh:
-				self.ftp.retrbinary('RETR %s' % arch_name + '.tar', fh.write)
+		except:
+			print 'Something went wrong'
 
-			print 'extracting...'
-			tar = tarfile.open(arch_path + '.tar')
-			tar.extractall(path)
-			tar.close();
+		finally:
+			try:
+				self.ftp.delete('guard_push')
+				self.ftp.quit()
+			except:
+				print 'Failed to remove push guard & close ftp connection'			
 
-			print 'done!'
-			
-		else:
-			print 'Data does not exists'
+		return res
 
+
+	def pull(self, path, version, platform):
+		res = False
+		print 'Trying to pull', path, 'from', self.server 
+		
+		try:
+			self.__login(version, platform)
+
+			arch_file = 'bcm_data.tar'
+			arch_path = os.path.join(tempfile.gettempdir(), arch_file)
+
+			if self.__file_exists('guard_ready'):
+				print 'Data exists on the server'
+
+				print 'downloading...'
+				with open(arch_path, 'wb') as fh:
+					self.ftp.retrbinary('RETR %s' % arch_file, fh.write)
+
+				print 'extracting...'
+				tar = tarfile.open(arch_path)
+				tar.extractall(path)
+				tar.close();
+				
+				print 'done!'
+				res = True
+				
+			else:
+				print 'Data does not exists'
+
+		except:
+			print 'Somthing went wrong'
+		
+		finally:
+			try:
+				self.ftp.quit()
+			except:
+				print 'Failed to close ftp session'
+		
+		return res
 
 
 	def __file_exists(self, filename):
@@ -126,16 +159,24 @@ def main():
 	parser.add_argument('path', help='Path to be stored on server')
 	parser.add_argument('version', help='Version of binaries')
 	parser.add_argument('platform', help='Target platform name')
-	parser.add_argument('--user', default='bcm', help='ftp username')
-	parser.add_argument('--passwd', default='123', help='ftp userpass')
+	parser.add_argument('--user', default='anonymous', help='ftp username')
+	parser.add_argument('--passwd', default='anonymous@', help='ftp userpass')
+	parser.add_argument('--project', default='default', help='project name')
 
 	args = parser.parse_args()
+	bcm = FtpBCM(args.server, args.user, args.passwd, args.project)
+	ret = False;
 
-	if ((args.command != 'push') and (args.command != 'pull')):
-		print 'Unexpected command: ',  args.command
+	if args.command == 'push':
+		ret = bcm.push(args.path, args.version, args.platform)
+	elif args.command == 'pull':
+		ret = bcm.pull(args.path, args.version, args.platform)
+	else:
+		print 'Unexpected command: ', args.command
 		raise Exception('Unexpected command')
 
-	bcm = FtpBCM(args.command, args.server, args.user, args.passwd, args.path, args.version, args.platform);
+	if False==ret:
+		raise Exception('Failed to execute command')
 
 
 if __name__ == "__main__":
