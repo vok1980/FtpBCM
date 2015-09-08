@@ -8,6 +8,7 @@ import glob
 import shutil
 import tarfile
 import tempfile
+import socket
 
 
 class FtpBCM:
@@ -72,13 +73,15 @@ class FtpBCM:
 				print 'archiving...'
 				shutil.make_archive(arch_path, 'tar', path)
 			
-				bio = io.BytesIO(' ')
+				hostname = socket.gethostname()
+				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_push', bio)
 
 				print 'uploading...'
 				self.__uploadThis(arch_path + '.tar')
 
 				print 'setting guard...'
+				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_ready', bio)
 				print 'done!'
 				res = True
