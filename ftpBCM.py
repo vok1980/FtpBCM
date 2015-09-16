@@ -119,6 +119,10 @@ class FtpBCM:
 				with open(arch_path, 'wb') as fh:
 					self.ftp.retrbinary('RETR %s' % arch_file, fh.write)
 
+				if os.exists(path):
+					path_new = path + '.bak'
+					shutil.copytree(path, path_new)
+
 				print 'extracting...'
 				tar = tarfile.open(arch_path)
 				tar.extractall(path)
