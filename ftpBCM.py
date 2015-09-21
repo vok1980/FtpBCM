@@ -104,6 +104,7 @@ class FtpBCM:
 
 	def pull(self, path, version, platform):
 		res = False
+		path = os.path.normpath(path)
 		print 'Trying to pull', path, 'from', self.server 
 		
 		try:
