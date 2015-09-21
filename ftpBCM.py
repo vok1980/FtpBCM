@@ -119,7 +119,7 @@ class FtpBCM:
 				with open(arch_path, 'wb') as fh:
 					self.ftp.retrbinary('RETR %s' % arch_file, fh.write)
 
-				self.__backup()
+				self.__backup(path)
 
 				print 'extracting...'
 				tar = tarfile.open(arch_path)
@@ -144,17 +144,17 @@ class FtpBCM:
 		return res
 
 
-	def __backup(self):
+	def __backup(self, path):
 		if os.path.exists(path):
 			print 'bakuping old', path, '...'
-			bak_postfix_orig = '.bak'
-			count = 0
-			path_old = path + bak_postfix_orig
-			while (os.path.exists(path_old)):
-				count = count + 1
-				path_old = path + bak_postfix_orig + str(count)
-			shutil.move(path, path_old)
-			print '...', path, 'moved to', path_old
+			bak_path = path + '.bak'
+
+			if os.path.exists(bak_path):
+				shutil.rmtree(bak_path)
+
+			shutil.move(path, bak_path)
+			print '...', path, 'moved to', bak_path
+
 
 
 	def __file_exists(self, filename):
