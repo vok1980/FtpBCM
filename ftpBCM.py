@@ -8,6 +8,7 @@ import glob
 import shutil
 import tarfile
 import tempfile
+import socket
 
 
 class FtpBCM:
@@ -72,13 +73,15 @@ class FtpBCM:
 				print 'archiving...'
 				shutil.make_archive(arch_path, 'tar', path)
 			
-				bio = io.BytesIO(' ')
+				hostname = socket.gethostname()
+				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_push', bio)
 
 				print 'uploading...'
 				self.__uploadThis(arch_path + '.tar')
 
 				print 'setting guard...'
+				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_ready', bio)
 				print 'done!'
 				res = True
@@ -101,6 +104,7 @@ class FtpBCM:
 
 	def pull(self, path, version, platform):
 		res = False
+		path = os.path.normpath(path)
 		print 'Trying to pull', path, 'from', self.server 
 		
 		try:
@@ -115,6 +119,8 @@ class FtpBCM:
 				print 'downloading...'
 				with open(arch_path, 'wb') as fh:
 					self.ftp.retrbinary('RETR %s' % arch_file, fh.write)
+
+				self.__backup(path)
 
 				print 'extracting...'
 				tar = tarfile.open(arch_path)
@@ -137,6 +143,18 @@ class FtpBCM:
 				print 'Failed to close ftp session'
 		
 		return res
+
+
+	def __backup(self, path):
+		if os.path.exists(path):
+			print 'backuping old', path, '...'
+			bak_path = path + '.bak'
+
+			if os.path.exists(bak_path):
+				shutil.rmtree(bak_path)
+
+			shutil.move(path, bak_path)
+			print '...', path, 'moved to', bak_path
 
 
 	def __file_exists(self, filename):
