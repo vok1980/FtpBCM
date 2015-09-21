@@ -119,16 +119,7 @@ class FtpBCM:
 				with open(arch_path, 'wb') as fh:
 					self.ftp.retrbinary('RETR %s' % arch_file, fh.write)
 
-				if os.path.exists(path):
-					print 'bakuping old', path, '...'
-					bak_postfix_orig = '.bak'
-					count = 0
-					path_old = path + bak_postfix_orig
-					while (os.path.exists(path_old)):
-						count = count + 1
-						path_old = path + bak_postfix_orig + str(count)
-					shutil.move(path, path_old)
-					print '...', path, 'moved to', path_old
+				self.__backup()
 
 				print 'extracting...'
 				tar = tarfile.open(arch_path)
@@ -151,6 +142,19 @@ class FtpBCM:
 				print 'Failed to close ftp session'
 		
 		return res
+
+
+	def __backup(self):
+		if os.path.exists(path):
+			print 'bakuping old', path, '...'
+			bak_postfix_orig = '.bak'
+			count = 0
+			path_old = path + bak_postfix_orig
+			while (os.path.exists(path_old)):
+				count = count + 1
+				path_old = path + bak_postfix_orig + str(count)
+			shutil.move(path, path_old)
+			print '...', path, 'moved to', path_old
 
 
 	def __file_exists(self, filename):
