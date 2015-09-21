@@ -147,7 +147,7 @@ class FtpBCM:
 
 	def __backup(self, path):
 		if os.path.exists(path):
-			print 'bakuping old', path, '...'
+			print 'backuping old', path, '...'
 			bak_path = path + '.bak'
 
 			if os.path.exists(bak_path):
