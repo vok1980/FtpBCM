@@ -157,7 +157,6 @@ class FtpBCM:
 			print '...', path, 'moved to', bak_path
 
 
-
 	def __file_exists(self, filename):
 		filelist = [] #to store all files
 		self.ftp.retrlines('LIST',filelist.append)    # append to list  
