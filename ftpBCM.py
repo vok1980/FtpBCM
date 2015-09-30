@@ -52,7 +52,7 @@ class FtpBCM:
 
 
 	def push(self, path, version, platform):
-		print 'Trying to push ', path, 'on ', self.server, '...' 
+		print 'Trying to push ', path, 'on ', self.server, '...'
 		res = False
 
 		try:
@@ -66,13 +66,13 @@ class FtpBCM:
 
 			else:
 				print 'Data does not presists on server yet'
-				
+
 				arch_name = 'bcm_data'
 				arch_path = os.path.join(tempfile.gettempdir(), arch_name)
 
 				print 'archiving...'
 				shutil.make_archive(arch_path, 'tar', path)
-			
+
 				hostname = socket.gethostname()
 				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_push', bio)
@@ -85,7 +85,7 @@ class FtpBCM:
 				self.ftp.storbinary('STOR guard_ready', bio)
 				print 'done!'
 				res = True
-		
+
 		except Exception as e:
 			print 'Error happend:', e
 
@@ -97,7 +97,7 @@ class FtpBCM:
 				self.ftp.delete('guard_push')
 				self.ftp.quit()
 			except:
-				print 'Failed to remove push guard & close ftp connection'			
+				print 'Failed to remove push guard & close ftp connection'
 
 		return res
 
@@ -105,8 +105,8 @@ class FtpBCM:
 	def pull(self, path, version, platform):
 		res = False
 		path = os.path.normpath(path)
-		print 'Trying to pull', path, 'from', self.server 
-		
+		print 'Trying to pull', path, 'from', self.server
+
 		try:
 			self.__login(version, platform)
 
@@ -126,22 +126,22 @@ class FtpBCM:
 				tar = tarfile.open(arch_path)
 				tar.extractall(path)
 				tar.close();
-				
+
 				print 'done!'
 				res = True
-				
+
 			else:
 				print 'Data does not exists'
 
 		except:
 			print 'Somthing went wrong'
-		
+
 		finally:
 			try:
 				self.ftp.quit()
 			except:
 				print 'Failed to close ftp session'
-		
+
 		return res
 
 
@@ -159,7 +159,7 @@ class FtpBCM:
 
 	def __file_exists(self, filename):
 		filelist = [] #to store all files
-		self.ftp.retrlines('LIST',filelist.append)    # append to list  
+		self.ftp.retrlines('LIST',filelist.append)    # append to list
 
 		for f in filelist:
 			if f.split()[-1] == filename:
