@@ -52,54 +52,52 @@ class FtpBCM:
 
 
 	def push(self, path, version, platform):
-		print 'Trying to push', path, 'to', self.server
-		print '    Version:', version
-		print '    Platform:', platform
+		print 'Trying to push ', path, 'on ', self.server, '...' 
 		res = False
 
 		try:
 			self.__login(version, platform)
 
 			if self.__file_exists('guard_ready'):
-				print 'The binary is already on the server. Stopping the upload.'
+				print 'Data already exists, no need to push'
 
 			elif self.__file_exists('guard_push'):
-				print 'The binary us being uploaded to the server by someone else. Stopping the upload.'
+				print 'Data already in progress'
 
 			else:
-				print 'The existing binary was not found on the server. Starting the upload...'
+				print 'Data does not presists on server yet'
 				
 				arch_name = 'bcm_data'
 				arch_path = os.path.join(tempfile.gettempdir(), arch_name)
 
-				print '...Archiving...'
+				print 'archiving...'
 				shutil.make_archive(arch_path, 'tar', path)
 			
 				hostname = socket.gethostname()
 				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_push', bio)
 
-				print '...Uploading...'
+				print 'uploading...'
 				self.__uploadThis(arch_path + '.tar')
 
-				print '...Setting guard...'
+				print 'setting guard...'
 				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_ready', bio)
-				print '...Done!'
+				print 'done!'
 				res = True
 		
 		except Exception as e:
-			print 'Error occured: ', e
+			print 'Error happend:', e
 
 		except:
-			print 'Something went wrong!'
+			print 'Something went wrong'
 
 		finally:
 			try:
 				self.ftp.delete('guard_push')
 				self.ftp.quit()
 			except:
-				print 'Failed to remove push guard & close ftp connection!'
+				print 'Failed to remove push guard & close ftp connection'			
 
 		return res
 
@@ -107,9 +105,7 @@ class FtpBCM:
 	def pull(self, path, version, platform):
 		res = False
 		path = os.path.normpath(path)
-		print 'Trying to pull', path, 'from', self.server
-		print '    Version:', version
-		print '    Platform:', platform
+		print 'Trying to pull', path, 'from', self.server 
 		
 		try:
 			self.__login(version, platform)
@@ -118,47 +114,47 @@ class FtpBCM:
 			arch_path = os.path.join(tempfile.gettempdir(), arch_file)
 
 			if self.__file_exists('guard_ready'):
-				print 'The binary has been found on on the server, staring download...'
+				print 'Data exists on the server'
 
-				print '...Downloading...'
+				print 'downloading...'
 				with open(arch_path, 'wb') as fh:
 					self.ftp.retrbinary('RETR %s' % arch_file, fh.write)
 
 				self.__backup(path)
 
-				print '...Extracting...'
+				print 'extracting...'
 				tar = tarfile.open(arch_path)
 				tar.extractall(path)
 				tar.close();
 				
-				print '...Done!'
+				print 'done!'
 				res = True
 				
 			else:
-				print 'The pre-built binary was not found on the server, sorry.'
+				print 'Data does not exists'
 
 		except:
-			print 'Something went wrong!'
+			print 'Somthing went wrong'
 		
 		finally:
 			try:
 				self.ftp.quit()
 			except:
-				print 'Failed to close ftp session!'
+				print 'Failed to close ftp session'
 		
 		return res
 
 
 	def __backup(self, path):
 		if os.path.exists(path):
-			print 'Backing up old', path, '...'
+			print 'backuping old', path, '...'
 			bak_path = path + '.bak'
 
 			if os.path.exists(bak_path):
 				shutil.rmtree(bak_path)
 
 			shutil.move(path, bak_path)
-			print '...', path, 'has been moved to', bak_path
+			print '...', path, 'moved to', bak_path
 
 
 	def __file_exists(self, filename):
@@ -175,9 +171,9 @@ class FtpBCM:
 def main():
 	import argparse
 
-	parser = argparse.ArgumentParser(description='Upload binaries to FTP server with respect to version and target platform.')
+	parser = argparse.ArgumentParser(description='Push binaries to ftp server with respect to version and target platform')
 	parser.add_argument('command', help='Command can be push or pull')
-	parser.add_argument('server', help='Destination FTP server name')
+	parser.add_argument('server', help='Destination server name')
 	parser.add_argument('path', help='Path to be stored on server')
 	parser.add_argument('version', help='Version of binaries')
 	parser.add_argument('platform', help='Target platform name')
@@ -195,12 +191,13 @@ def main():
 		ret = bcm.pull(args.path, args.version, args.platform)
 	else:
 		print 'Unexpected command: ', args.command
-		raise Exception('Unexpected command!')
+		raise Exception('Unexpected command')
 
 	if False==ret:
-		raise Exception('Failed to execute command!')
+		raise Exception('Failed to execute command')
 
 
 if __name__ == "__main__":
     main()
+
 
