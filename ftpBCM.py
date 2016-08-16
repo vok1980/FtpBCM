@@ -74,13 +74,14 @@ class FtpBCM:
 
 				print '...Archiving...'
 				shutil.make_archive(arch_path, 'tar', path)
+				arch_path = arch_path + '.tar'
 
 				hostname = socket.gethostname()
 				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_push', bio)
 
 				print '...Uploading...'
-				self.__uploadThis(arch_path + '.tar')
+				self.__uploadThis(arch_path)
 
 				print '...Setting guard...'
 				bio = io.BytesIO(hostname)
