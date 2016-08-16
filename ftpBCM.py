@@ -60,6 +60,17 @@ class FtpBCM:
 		return hash_md5.hexdigest()
 
 
+	def __check_md5(self, md5sum):
+		if self.__file_exists('md5'):
+			md5_server = os.path.join(tempfile.gettempdir(), 'ftpbcm_md5')
+			with open(md5_server, 'wb') as fh:
+				self.ftp.retrbinary('RETR %s' % 'md5', fh.write)
+			with open(md5_server, 'rb') as fh:
+				sum_on_ftp = fh.read()
+				return sum_on_ftp == md5sum
+		return False
+
+
 	def push(self, path, version, platform):
 		print 'Trying to push', path, 'to', self.server
 		print '    Version:', version
