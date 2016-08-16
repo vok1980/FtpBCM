@@ -85,6 +85,11 @@ class FtpBCM:
 				shutil.make_archive(arch_path, 'tar', path)
 				arch_path = arch_path + '.tar'
 
+				print '...calc md5...'
+				md5sum = self.__md5(arch_path)
+				bio = io.BytesIO(md5sum)
+				self.ftp.storbinary('STOR md5', bio)
+
 				hostname = socket.gethostname()
 				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_push', bio)
