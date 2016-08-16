@@ -12,6 +12,13 @@ import socket
 import hashlib
 
 
+class BcmChecksumMismatch(Exception):
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
+
+
 class FtpBCM:
 	def __init__(self, server, user, passwd, project):
 		self.server = server
@@ -80,24 +87,28 @@ class FtpBCM:
 		try:
 			self.__login(version, platform)
 
+			arch_name = 'bcm_data'
+			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
+
+			print '...Archiving...'
+			shutil.make_archive(arch_path, 'tar', path)
+			arch_path = arch_path + '.tar'
+
+			print '...calc md5...'
+			md5sum = self.__md5(arch_path)
+
 			if self.__file_exists('guard_ready'):
-				print 'The binary is already on the server. Stopping the upload.'
+				if self.__check_md5(md5sum):
+					print 'The binary is already on the server. md5 is valid. Stopping the upload.'
+				else:
+					raise BcmChecksumMismatch('The binary is already on the server, but md5 does not match. Stopping the upload.')
 
 			elif self.__file_exists('guard_push'):
 				print 'The binary us being uploaded to the server by someone else. Stopping the upload.'
 
 			else:
 				print 'The binary was not found on the server. Starting the upload...'
-				
-				arch_name = 'bcm_data'
-				arch_path = os.path.join(tempfile.gettempdir(), arch_name)
 
-				print '...Archiving...'
-				shutil.make_archive(arch_path, 'tar', path)
-				arch_path = arch_path + '.tar'
-
-				print '...calc md5...'
-				md5sum = self.__md5(arch_path)
 				bio = io.BytesIO(md5sum)
 				self.ftp.storbinary('STOR md5', bio)
 
@@ -113,6 +124,10 @@ class FtpBCM:
 				self.ftp.storbinary('STOR guard_ready', bio)
 				print '...Done!'
 				res = True
+
+		except BcmChecksumMismatch as e:
+			print e
+			raise e
 
 		except Exception as e:
 			print 'Error occured: ', e
