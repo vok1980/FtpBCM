@@ -59,11 +59,17 @@ class FtpBCM:
 			self.ftp.cwd('..')
 
 
-	def __md5(self, fname):
+	def __md5(self, file_directory):
+		file_directory = os.path.abspath(file_directory)
 		hash_md5 = hashlib.md5()
-		with open(fname, "rb") as f:
-			for chunk in iter(lambda: f.read(4096), b""):
-				hash_md5.update(chunk)
+
+		for root, dirs, filenames in os.walk(file_directory):
+			for fname in filenames:
+				fpath = os.path.join(root, fname)
+				with open(fpath, "rb") as f:
+					for chunk in iter(lambda: f.read(4096), b""):
+						hash_md5.update(chunk)
+
 		return hash_md5.hexdigest()
 
 
@@ -95,7 +101,7 @@ class FtpBCM:
 			arch_path = arch_path + '.tar'
 
 			print '...calc md5...'
-			md5sum = self.__md5(arch_path)
+			md5sum = self.__md5(path)
 
 			if self.__file_exists('guard_ready'):
 				if self.__check_md5(md5sum):
