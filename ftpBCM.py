@@ -83,7 +83,7 @@ class FtpBCM:
 				self.ftp.retrbinary('RETR %s' % 'md5', fh.write)
 			with open(md5_server, 'rb') as fh:
 				sum_on_ftp = fh.read()
-				return sum_on_ftp == md5sum
+				return sum_on_ftp.strip() == md5sum.strip()
 		return False
 
 
