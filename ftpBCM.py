@@ -10,6 +10,8 @@ import tarfile
 import tempfile
 import socket
 import hashlib
+import random
+import string
 
 
 class BcmChecksumMismatch(Exception):
@@ -75,7 +77,8 @@ class FtpBCM:
 
 	def __check_md5(self, md5sum):
 		if self.__file_exists('md5'):
-			md5_server = os.path.join(tempfile.gettempdir(), 'ftpbcm_md5')
+			filename = 'ftpbcm_md5_{}'.format(''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8)))
+			md5_server = os.path.join(tempfile.gettempdir(), filename)
 			with open(md5_server, 'wb') as fh:
 				self.ftp.retrbinary('RETR %s' % 'md5', fh.write)
 			with open(md5_server, 'rb') as fh:
