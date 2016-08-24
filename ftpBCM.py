@@ -9,6 +9,16 @@ import shutil
 import tarfile
 import tempfile
 import socket
+import hashlib
+import random
+import string
+
+
+class BcmChecksumMismatch(Exception):
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
 
 
 class FtpBCM:
@@ -51,6 +61,32 @@ class FtpBCM:
 			self.ftp.cwd('..')
 
 
+	def __md5(self, file_directory):
+		file_directory = os.path.abspath(file_directory)
+		hash_md5 = hashlib.md5()
+
+		for root, dirs, filenames in os.walk(file_directory):
+			for fname in filenames:
+				fpath = os.path.join(root, fname)
+				with open(fpath, "rb") as f:
+					for chunk in iter(lambda: f.read(4096), b""):
+						hash_md5.update(chunk)
+
+		return hash_md5.hexdigest()
+
+
+	def __check_md5(self, md5sum):
+		if self.__file_exists('md5'):
+			filename = 'ftpbcm_md5_{}'.format(''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8)))
+			md5_server = os.path.join(tempfile.gettempdir(), filename)
+			with open(md5_server, 'wb') as fh:
+				self.ftp.retrbinary('RETR %s' % 'md5', fh.write)
+			with open(md5_server, 'rb') as fh:
+				sum_on_ftp = fh.read()
+				return sum_on_ftp.strip() == md5sum.strip()
+		return False
+
+
 	def push(self, path, version, platform):
 		print 'Trying to push', path, 'to', self.server
 		print '    Version:', version
@@ -60,33 +96,47 @@ class FtpBCM:
 		try:
 			self.__login(version, platform)
 
+			arch_name = 'bcm_data'
+			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
+
+			print '...Archiving...'
+			shutil.make_archive(arch_path, 'tar', path)
+			arch_path = arch_path + '.tar'
+
+			print '...calc md5...'
+			md5sum = self.__md5(path)
+
 			if self.__file_exists('guard_ready'):
-				print 'The binary is already on the server. Stopping the upload.'
+				if self.__check_md5(md5sum):
+					print 'The binary is already on the server. md5 is valid. Stopping the upload.'
+				else:
+					raise BcmChecksumMismatch('The binary is already on the server, but md5 does not match. Stopping the upload.')
 
 			elif self.__file_exists('guard_push'):
 				print 'The binary us being uploaded to the server by someone else. Stopping the upload.'
 
 			else:
 				print 'The binary was not found on the server. Starting the upload...'
-				
-				arch_name = 'bcm_data'
-				arch_path = os.path.join(tempfile.gettempdir(), arch_name)
 
-				print '...Archiving...'
-				shutil.make_archive(arch_path, 'tar', path)
+				bio = io.BytesIO(md5sum)
+				self.ftp.storbinary('STOR md5', bio)
 
 				hostname = socket.gethostname()
 				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_push', bio)
 
 				print '...Uploading...'
-				self.__uploadThis(arch_path + '.tar')
+				self.__uploadThis(arch_path)
 
 				print '...Setting guard...'
 				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_ready', bio)
 				print '...Done!'
 				res = True
+
+		except BcmChecksumMismatch as e:
+			print e
+			raise e
 
 		except Exception as e:
 			print 'Error occured: ', e
