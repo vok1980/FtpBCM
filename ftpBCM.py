@@ -107,10 +107,7 @@ class FtpBCM:
 			md5sum = self.__md5(path)
 
 			if self.__file_exists('guard_ready'):
-				if self.__check_md5(md5sum):
-					print 'The binary is already on the server. md5 is valid. Stopping the upload.'
-				else:
-					raise BcmChecksumMismatch('The binary is already on the server, but md5 does not match. Stopping the upload.')
+				print 'The binary is already on the server. Stopping the upload.'
 
 			elif self.__file_exists('guard_push'):
 				print 'The binary us being uploaded to the server by someone else. Stopping the upload.'
