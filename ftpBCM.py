@@ -188,6 +188,9 @@ class FtpBCM:
 			else:
 				print 'The pre-built binary was not found on the server, sorry.'
 
+		except Exception as e:
+			print 'Exception:', e
+
 		except:
 			print 'Something went wrong!'
 
