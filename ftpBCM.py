@@ -118,7 +118,7 @@ class FtpBCM:
 				bio = io.BytesIO(md5sum)
 				self.ftp.storbinary('STOR md5', bio)
 
-				hostname = socket.gethostname()
+				hostname = os.getenv('HOSTNAME', socket.gethostname())
 				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_push', bio)
 
