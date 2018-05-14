@@ -100,12 +100,11 @@ class FtpBCM:
 		try:
 			self.__login(version, platform)
 
+			print '...Archiving...'
 			arch_name = 'bcm_data'
 			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
-
-			print '...Archiving...'
-			shutil.make_archive(arch_path, 'tar', path)
-			arch_path = arch_path + '.tar'
+			shutil.make_archive(arch_path, 'gztar', path)
+			arch_path += '.tar.gz'
 
 			print '...calc md5...'
 			md5sum = self.__md5(path)
@@ -119,15 +118,16 @@ class FtpBCM:
 			else:
 				print 'The binary was not found on the server. Starting the upload...'
 
-				bio = io.BytesIO(md5sum)
-				self.ftp.storbinary('STOR md5', bio)
-
 				hostname = os.getenv('HOSTNAME', socket.gethostname())
 				bio = io.BytesIO(hostname)
 				self.ftp.storbinary('STOR guard_push', bio)
 
+				bio = io.BytesIO(md5sum)
+				self.ftp.storbinary('STOR md5', bio)
+
 				print '...Uploading...'
 				self.__uploadThis(arch_path)
+				self.ftp.storbinary('STOR arch_name', io.BytesIO(os.path.basename(arch_path)))
 
 				print '...Setting guard...'
 				bio = io.BytesIO(hostname)
