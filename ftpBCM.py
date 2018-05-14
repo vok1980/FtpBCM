@@ -30,8 +30,12 @@ class FtpBCM:
 
 
 	def __login(self, version, platform):
-		self.ftp = ftplib.FTP(self.server)
-		self.ftp.login(self.user, self.passwd)
+		try:
+			self.ftp = ftplib.FTP(self.server)
+			self.ftp.login(self.user, self.passwd)
+		except Exception as e:
+			print "Failed fo login", self.server
+			raise e
 		self.__mkd_cd('bcm')
 		self.__mkd_cd(self.project)
 		self.__mkd_cd(version)
@@ -183,6 +187,9 @@ class FtpBCM:
 
 			else:
 				print 'The pre-built binary was not found on the server, sorry.'
+
+		except Exception as e:
+			print 'Exception:', e
 
 		except:
 			print 'Something went wrong!'
