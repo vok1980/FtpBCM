@@ -161,19 +161,32 @@ class FtpBCM:
 		print 'Trying to pull', path, 'from', self.server
 		print '    Version:', version
 		print '    Platform:', platform
-		
+
+		self.arch_file = 'bcm_data.tar'
+
 		try:
 			self.__login(version, platform)
 
-			arch_file = 'bcm_data.tar'
-			arch_path = os.path.join(tempfile.gettempdir(), arch_file)
+			def set_arch_file(s):
+				print "Read arch_file: " + s
+				self.arch_file = s.strip()
+
+			try:
+				if self.__file_exists('arch_name'):
+					self.ftp.retrbinary('RETR arch_name', set_arch_file)
+				else:
+					print 'arch_name not found on server'
+			except Exception as e:
+				print 'Failed to read file arch_name, using', self.arch_file
+
+			arch_path = os.path.join(tempfile.gettempdir(), self.arch_file)
 
 			if self.__file_exists('guard_ready'):
 				print 'The binary has been found on on the server, staring download...'
 
 				print '...Downloading...'
 				with open(arch_path, 'wb') as fh:
-					self.ftp.retrbinary('RETR %s' % arch_file, fh.write)
+					self.ftp.retrbinary('RETR %s' % self.arch_file, fh.write)
 
 				self.__backup(path)
 
