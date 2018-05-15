@@ -98,8 +98,6 @@ class FtpBCM:
 		res = False
 
 		try:
-			self.__login(version, platform)
-
 			print '...Archiving...'
 			arch_name = 'bcm_data'
 			arch_path = os.path.join(tempfile.gettempdir(), arch_name)
@@ -108,6 +106,8 @@ class FtpBCM:
 
 			print '...calc md5...'
 			md5sum = self.__md5(path)
+
+			self.__login(version, platform)
 
 			if self.__file_exists('guard_ready'):
 				print 'The binary is already on the server. Stopping the upload.'
