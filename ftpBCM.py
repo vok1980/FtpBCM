@@ -34,7 +34,7 @@ class FtpBCM:
 			self.ftp = ftplib.FTP(self.server)
 			self.ftp.login(self.user, self.passwd)
 		except Exception as e:
-			print("Failed fo login", self.server)
+			print("Failed fo login %s" % self.server)
 			raise e
 		self.__mkd_cd('bcm')
 		self.__mkd_cd(self.project)
@@ -92,9 +92,9 @@ class FtpBCM:
 
 
 	def push(self, path, version, platform):
-		print('Trying to push', path, 'to', self.server)
-		print('    Version:', version)
-		print('    Platform:', platform)
+		print('Trying to push %s to %s' % (path, self.server))
+		print('    Version: %s' % version)
+		print('    Platform: %s' % platform)
 		res = False
 
 		try:
@@ -140,7 +140,7 @@ class FtpBCM:
 			raise e
 
 		except Exception as e:
-			print('Error occured: ', e)
+			print('Error occured: ' + e)
 
 		except:
 			print('Something went wrong!')
@@ -158,9 +158,9 @@ class FtpBCM:
 	def pull(self, path, version, platform):
 		res = False
 		path = os.path.normpath(path)
-		print('Trying to pull', path, 'from', self.server)
-		print('    Version:', version)
-		print('    Platform:', platform)
+		print('Trying to pull %s from %s' % (path, self.server))
+		print('    Version: %s' % version)
+		print('    Platform: %s' % platform)
 
 		self.arch_file = 'bcm_data.tar'
 
@@ -177,7 +177,7 @@ class FtpBCM:
 				else:
 					print('arch_name not found on server')
 			except Exception as e:
-				print('Failed to read file arch_name, using', self.arch_file)
+				print('Failed to read file arch_name, using %s' % self.arch_file)
 
 			arch_path = os.path.join(tempfile.gettempdir(), self.arch_file)
 
@@ -202,7 +202,7 @@ class FtpBCM:
 				print('The pre-built binary was not found on the server, sorry.')
 
 		except Exception as e:
-			print('Exception:', e)
+			print('Exception: %s' % e)
 
 		except:
 			print('Something went wrong!')
@@ -218,14 +218,14 @@ class FtpBCM:
 
 	def __backup(self, path):
 		if os.path.exists(path):
-			print('Backing up old', path, '...')
+			print('Backing up old %s...' % path)
 			bak_path = path + '.bak'
 
 			if os.path.exists(bak_path):
 				shutil.rmtree(bak_path)
 
 			shutil.move(path, bak_path)
-			print('...', path, 'has been moved to', bak_path)
+			print('... %s has been moved to %s' % (path, bak_path))
 
 
 	def __file_exists(self, filename):
@@ -261,7 +261,7 @@ def main():
 	elif args.command == 'pull':
 		ret = bcm.pull(args.path, args.version, args.platform)
 	else:
-		print('Unexpected command: ', args.command)
+		print('Unexpected command: %s' % args.command)
 		raise Exception('Unexpected command!')
 
 	if False==ret:
