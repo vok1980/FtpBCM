@@ -193,7 +193,7 @@ class FtpBCM:
 				print('...Extracting...')
 				tar = tarfile.open(arch_path)
 				tar.extractall(path)
-				tar.close();
+				tar.close()
 				
 				print('...Done!')
 				res = True
@@ -254,7 +254,7 @@ def main():
 
 	args = parser.parse_args()
 	bcm = FtpBCM(args.server, args.user, args.passwd, args.project)
-	ret = False;
+	ret = False
 
 	if args.command == 'push':
 		ret = bcm.push(args.path, args.version, args.platform)
