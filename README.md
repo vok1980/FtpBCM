@@ -12,7 +12,7 @@ bcm = ftpBCM.FtpBCM('ftp server', 'user', 'password', 'project name')
 
 # When we need to build project's new revision, first we check if it already exists on server
 if bcm.pull(path_to_project_binaries_for_platform_desktop_x86, project_source_revision, 'desktop_debug_x86'):
-	print 'Your project binaries were successfully pulled from ftp server'
+	print('Your project binaries were successfully pulled from ftp server')
 	return
 
 # if not, then just build it.....
