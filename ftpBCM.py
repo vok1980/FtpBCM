@@ -168,8 +168,9 @@ class FtpBCM:
 			self.__login(version, platform)
 
 			def set_arch_file(s):
-				print("Read arch_file: " + s)
-				self.arch_file = s.strip()
+				file_name = s.decode("utf-8")
+				print("Read arch_file: {}".format(file_name))
+				self.arch_file = file_name.strip()
 
 			try:
 				if self.__file_exists('arch_name'):
