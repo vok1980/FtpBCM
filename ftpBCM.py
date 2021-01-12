@@ -119,18 +119,18 @@ class FtpBCM:
 				print('The binary was not found on the server. Starting the upload...')
 
 				hostname = os.getenv('HOSTNAME', socket.gethostname())
-				bio = io.BytesIO(hostname)
+				bio = io.BytesIO(hostname.encode("utf-8"))
 				self.ftp.storbinary('STOR guard_push', bio)
 
-				bio = io.BytesIO(md5sum)
+				bio = io.BytesIO(md5sum.encode("utf-8"))
 				self.ftp.storbinary('STOR md5', bio)
 
 				print('...Uploading...')
 				self.__uploadThis(arch_path)
-				self.ftp.storbinary('STOR arch_name', io.BytesIO(os.path.basename(arch_path)))
+				self.ftp.storbinary('STOR arch_name', io.BytesIO(os.path.basename(arch_path).encode("utf-8")))
 
 				print('...Setting guard...')
-				bio = io.BytesIO(hostname)
+				bio = io.BytesIO(hostname.encode("utf-8"))
 				self.ftp.storbinary('STOR guard_ready', bio)
 				print('...Done!')
 				res = True
